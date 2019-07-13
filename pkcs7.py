@@ -1,5 +1,4 @@
 import binascii
-import StringIO
 
 class PKCS7Encoder(object):
     '''
@@ -36,6 +35,15 @@ class PKCS7Encoder(object):
         Remove the PKCS#7 padding from a text string
         '''
         nl = len(text)
+        text = bytearray(text)
+        val = text[-1]
+        if val>self.k:
+            raise ValueError('Input is not padded or padding is corrupt')
+        l = nl - val
+        return bytes(text[:l])
+        
+        
+        nl = len(text)
         val = int(binascii.hexlify(text[-1]), 16)
         if val > self.k:
             raise ValueError('Input is not padded or padding is corrupt')
@@ -48,9 +56,10 @@ class PKCS7Encoder(object):
         '''
         Pad an input string according to PKCS#7
         '''
-        l = len(text)
-        output = StringIO.StringIO()
-        val = self.k - (l % self.k)
-        for _ in xrange(val):
-            output.write('%02x' % val)
-        return text + binascii.unhexlify(output.getvalue())
+        if type(text) is str:
+            text = text.encode('utf-8')
+        text = bytearray(text)
+        val = self.k - (len(text)%self.k)
+        for _ in range(val):
+            text.append(val)
+        return bytes(text)
